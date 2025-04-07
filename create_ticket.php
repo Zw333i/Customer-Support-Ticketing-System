@@ -1,7 +1,7 @@
 <?php 
 include "config.php"; 
 include "session.php";
-
+// create_ticket.php
 if (isset($_SESSION['success_message'])) {
     $success_message = $_SESSION['success_message'];
     unset($_SESSION['success_message']);
@@ -232,12 +232,20 @@ $profile_image = !empty($user['profile_image']) ? $user['profile_image'] : "uplo
                     <input type="email" name="email" class="form-control" required placeholder="Enter customer's email address">
                 </div>
                 
-                <div class="mb-4">
-                    <label class="form-label"><i class="bi bi-chat-left-text me-2"></i>Issue Description</label>
-                    <textarea name="issue" class="form-control" rows="5" required placeholder="Describe the issue in detail..."></textarea>
-                    <div class="form-text text-light">Please provide as much information as possible about the issue.</div>
-                </div>
-                
+            <div class="mb-3">
+                <label for="issue_type" class="form-label"><i class="bi bi-tag me-2"></i>Issue Type</label>
+                <select class="form-select" id="issue_type" name="issue_type" required>
+                    <option value="Other Reasons..." selected>Other Reasons...</option>
+                    <option value="Service Issue">Service Issue (Get your internet back on track quickly. Report your internet service concern)</option>
+                    <option value="Personnel Concerns">Personnel Concerns (Tell us about your experience with our authorized technician, contractor, employee or field agent)</option>
+                    <option value="Clarify Bill Charges">Clarify Bill Charges (To know more about billing charges and get assistance in understanding your bill)</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="issue" class="form-label"><i class="bi bi-exclamation-circle me-2"></i>Issue Details</label>
+                <textarea class="form-control" id="issue" name="issue" rows="5" required></textarea>
+            </div>
                 
                 <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
                     <button type="submit" class="btn btn-custom-primary px-4">

@@ -1,4 +1,5 @@
 <?php
+// store_ticket.php
 session_start();
 include "config.php";
 
@@ -10,12 +11,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $user_id = $_SESSION["user_id"]; 
     $name = $_POST["customer_name"];
     $email = $_POST["email"];
+    $issue_type = $_POST["issue_type"]; // Add this line
     $issue = $_POST["issue"];
     $status = "Open";
     $created_at = date('Y-m-d H:i:s');
 
-    $stmt = $conn->prepare("INSERT INTO tickets (user_id, customer_name, email, issue, status, created_at) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("isssss", $user_id, $name, $email, $issue, $status, $created_at);
+    // Update the query to include issue_type
+    $stmt = $conn->prepare("INSERT INTO tickets (user_id, customer_name, email, issue_type, issue, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("issssss", $user_id, $name, $email, $issue_type, $issue, $status, $created_at);
 
     if ($stmt->execute()) {
         $ticket_id = $stmt->insert_id; 
@@ -26,7 +29,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <p><strong>Ticket ID:</strong> #$ticket_id</p>
             <p><strong>Name:</strong> $name</p>
             <p><strong>Email:</strong> $email</p>
-            <p><strong>Issue:</strong> $issue</p>
+            <p><strong>Issue Type:</strong> $issue_type</p>
+            <p><strong>Issue Details:</strong> $issue</p>
             <p><strong>Status:</strong> $status</p>
             <p>We'll review your ticket and get back to you soon.</p>
             <p>You can view your ticket status at any time by logging into your account.</p>
@@ -41,7 +45,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <p><strong>User ID:</strong> $user_id</p>
             <p><strong>Name:</strong> $name</p>
             <p><strong>Email:</strong> $email</p>
-            <p><strong>Issue:</strong> $issue</p>
+            <p><strong>Issue Type:</strong> $issue_type</p>
+            <p><strong>Issue Details:</strong> $issue</p>
             <p>Please review and update the ticket status in the admin dashboard.</p>
         ";
         

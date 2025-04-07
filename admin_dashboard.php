@@ -102,9 +102,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['send_reply'])) {
 }
 
 $status_filter = isset($_GET['status']) ? $_GET['status'] : 'all';
+$issue_type_filter = isset($_GET['issue_type']) ? $_GET['issue_type'] : 'all';
 $search_term = isset($_GET['search']) ? $_GET['search'] : '';
 
-$sql = "SELECT id, customer_name, email, issue, status, created_at FROM tickets";
+$sql = "SELECT id, customer_name, email, issue_type, issue, status, created_at FROM tickets";
 $where_clauses = [];
 $params = [];
 $param_types = "";
@@ -112,6 +113,12 @@ $param_types = "";
 if ($status_filter && $status_filter !== 'all') {
     $where_clauses[] = "status = ?";
     $params[] = $status_filter;
+    $param_types .= "s";
+}
+
+if ($issue_type_filter && $issue_type_filter !== 'all') {
+    $where_clauses[] = "issue_type = ?";
+    $params[] = $issue_type_filter;
     $param_types .= "s";
 }
 
@@ -271,116 +278,80 @@ if (!$tickets) {
         }
         
         .table {
-            border-radius: 8px;
+            border-radius: 12px;
             overflow: hidden;
             border: 1px solid var(--medium-blue);
             margin-bottom: 30px;
-        }
-        
-        .table thead {
-            background-color: var(--medium-blue);
             color: white;
+            background-color: var(--medium-blue);
+        }
+
+        .table thead {
+            background-color: var(--dark-pink);
+            color: var(--dark-blue);
+            font-weight: bold;
         }
         
         .table tbody tr {
-            background-color: var(--blue);
-            color: white;
-        }
-        
-        .table tbody tr:hover {
             background-color: var(--medium-blue);
+            transition: all 0.2s ease;
         }
-        
-        .card {
+
+        .table tbody tr:hover {
+            background-color: #506b8b;
+        }
+
+        .table th, .table td {
+            vertical-align: middle;
+            padding: 12px 15px;
+            border-color: var(--light-blue);
+        }
+
+        .collapse .card {
             background-color: var(--blue);
+            border-color: var(--medium-blue);
+        }
+
+        .filter-section {
+            background-color: rgba(27, 38, 59, 0.5); 
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
             border: 1px solid var(--medium-blue);
         }
-        
-        .card-body {
-            background-color: var(--blue);
-            color: white;
-        }
-        
-        .text-muted {
-            color: var(--light-blue) !important;
-        }
-        
-        hr {
-            background-color: var(--medium-blue);
-            opacity: 0.5;
-        }
-        
-        .status-dropdown {
-            width: 100%;
-        }
-        
+
         .status-badge {
             width: 100%;
             display: block;
             text-align: center;
             padding: 6px;
-            border-radius: 4px;
+            border-radius: 6px;
             font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        
+
         .badge-pending {
             background-color: #ffc107;
             color: #000;
         }
-        
+
         .badge-progress {
             background-color: #0dcaf0;
             color: #000;
         }
-        
+
         .badge-resolved {
             background-color: #198754;
             color: #fff;
         }
-        
-        .filter-section {
-            background-color: var(--medium-blue);
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        
-        .filter-btn {
-            min-width: 120px;
-        }
-        
-        .status-button {
-            width: 100%;
-            text-align: left;
-            margin-bottom: 2px;
-            border: none;
-        }
-        
-        .dropdown-menu {
-            width: 100%;
-            background-color: var(--dark-blue);
-            border: 1px solid var(--light-blue);
-        }
-        
-        .dropdown-item {
-            color: var(--baby-pink);
-        }
-        
-        .dropdown-item:hover {
-            background-color: var(--medium-blue);
-            color: white;
-        }
-        
-        .dropdown-item.active {
-            background-color: var(--baby-pink);
-            color: var(--dark-blue);
-        }
-        
+
         .action-btn {
-            margin: 2px;
+            min-width: 80px;
         }
+
     </style>
 </head>
+
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
@@ -390,9 +361,6 @@ if (!$tickets) {
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="index.php"><i class="bi bi-house-door me-1"></i> Home</a>
-                    </li>
                     <li class="nav-item">
                         <a class="nav-link" href="logout.php"><i class="bi bi-box-arrow-right me-1"></i> Logout</a>
                     </li>
@@ -405,30 +373,40 @@ if (!$tickets) {
         <div class="dashboard-container">
             <h2><i class="bi bi-shield-lock me-2"></i>Admin Dashboard</h2>
             
-            <div class="filter-section">
-                <form method="GET" action="admin_dashboard.php">
-                    <div class="row align-items-end">
-                        <div class="col-md-6 mb-3 mb-md-0">
-                            <label for="search" class="form-label text-white"><i class="bi bi-search me-1"></i>Search</label>
-                            <input type="text" class="form-control" id="search" name="search" placeholder="Search by name, email or issue..." value="<?php echo htmlspecialchars($search_term); ?>">
-                        </div>
-                        <div class="col-md-3 mb-3 mb-md-0">
-                            <label for="status" class="form-label text-white"><i class="bi bi-funnel me-1"></i>Filter by Status</label>
-                            <select class="form-select" id="status" name="status">
-                                <option value="all" <?php echo ($status_filter === 'all') ? 'selected' : ''; ?>>All Tickets</option>
-                                <option value="Open" <?php echo ($status_filter === 'Open') ? 'selected' : ''; ?>>Open</option>
-                                <option value="In Progress" <?php echo ($status_filter === 'In Progress') ? 'selected' : ''; ?>>In Progress</option>
-                                <option value="Resolved" <?php echo ($status_filter === 'Resolved') ? 'selected' : ''; ?>>Resolved</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <button type="submit" class="btn btn-custom-primary w-100">
-                                <i class="bi bi-filter me-1"></i>Apply Filters
-                            </button>
-                        </div>
-                    </div>
-                </form>
+    <div class="filter-section mb-4">
+        <form method="GET" action="admin_dashboard.php">
+            <div class="row align-items-end g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label text-white"><i class="bi bi-search me-1"></i>Search</label>
+                    <input type="text" class="form-control" id="search" name="search" placeholder="Search by name, email or issue..." value="<?php echo htmlspecialchars($search_term); ?>">
+                </div>
+                <div class="col-md-3">
+                    <label for="status" class="form-label text-white"><i class="bi bi-funnel me-1"></i>Filter by Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="all" <?php echo ($status_filter === 'all') ? 'selected' : ''; ?>>All Tickets</option>
+                        <option value="Open" <?php echo ($status_filter === 'Open') ? 'selected' : ''; ?>>Open</option>
+                        <option value="In Progress" <?php echo ($status_filter === 'In Progress') ? 'selected' : ''; ?>>In Progress</option>
+                        <option value="Resolved" <?php echo ($status_filter === 'Resolved') ? 'selected' : ''; ?>>Resolved</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="issue_type" class="form-label text-white"><i class="bi bi-tag me-1"></i>Filter by Issue Type</label>
+                    <select class="form-select" id="issue_type" name="issue_type">
+                        <option value="all" <?php echo ($issue_type_filter === 'all') ? 'selected' : ''; ?>>All Issue Types</option>
+                        <option value="Service Issue" <?php echo ($issue_type_filter === 'Service Issue') ? 'selected' : ''; ?>>Service Issue</option>
+                        <option value="Personnel Concerns" <?php echo ($issue_type_filter === 'Personnel Concerns') ? 'selected' : ''; ?>>Personnel Concerns</option>
+                        <option value="Clarify Bill Charges" <?php echo ($issue_type_filter === 'Clarify Bill Charges') ? 'selected' : ''; ?>>Clarify Bill Charges</option>
+                        <option value="Other Reasons..." <?php echo ($issue_type_filter === 'Other Reasons...') ? 'selected' : ''; ?>>Other Reasons</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-custom-primary w-100">
+                        <i class="bi bi-filter me-1"></i>Apply Filters
+                    </button>
+                </div>
             </div>
+        </form>
+    </div>
             
             <div class="table-responsive">
                 <table class="table table-bordered table-hover">
@@ -438,6 +416,7 @@ if (!$tickets) {
                             <th><i class="bi bi-person me-1"></i>User</th>
                             <th><i class="bi bi-envelope me-1"></i>Email</th>
                             <th><i class="bi bi-exclamation-circle me-1"></i>Issue</th>
+                            <th><i class="bi bi-tag me-1"></i>Issue Type</th>
                             <th><i class="bi bi-tag me-1"></i>Status</th>
                             <th><i class="bi bi-arrow-repeat me-1"></i>Update Status</th>
                             <th><i class="bi bi-chat-dots me-1"></i>Actions</th>
@@ -451,6 +430,7 @@ if (!$tickets) {
                                     <td><?php echo htmlspecialchars($ticket['customer_name']); ?></td>
                                     <td><?php echo htmlspecialchars($ticket['email']); ?></td>
                                     <td><?php echo htmlspecialchars($ticket['issue']); ?></td>
+                                    <td><?php echo htmlspecialchars($ticket['issue_type']); ?></td>
                                     <td>
                                         <span class="status-badge <?php 
                                             if ($ticket['status'] == 'Open') echo 'badge-pending';
@@ -509,13 +489,13 @@ if (!$tickets) {
                                     <td>
                                         <div class="d-flex flex-column flex-md-row justify-content-center">
                                             <button class="btn btn-custom-info btn-sm action-btn" data-bs-toggle="collapse" data-bs-target="#replies_<?php echo $ticket['id']; ?>">
-                                                <i class="bi bi-eye me-1"></i>View Replies
+                                                <i class="bi bi-eye me-1"></i>Reply
                                             </button>
                                             <form method="POST" onsubmit="return confirm('Are you sure you want to delete this ticket?');">
                                                 <input type="hidden" name="ticket_id" value="<?php echo $ticket['id']; ?>">
                                                 <input type="hidden" name="delete_ticket" value="1">
                                                 <button type="submit" class="btn btn-custom-danger btn-sm action-btn">
-                                                    <i class="bi bi-trash me-1"></i>Delete
+                                                    <i class="bi bi-trash me-1"></i>
                                                 </button>
                                             </form>
                                         </div>
